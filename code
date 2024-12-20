@@ -1,0 +1,71 @@
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Mô hình Công việc
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(300))
+    priority = db.Column(db.String(10), nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    completed = db.Column(db.Boolean, default=False)
+
+# Trang chủ hiển thị danh sách công việc
+@app.route('/')
+def index():
+    tasks = Task.query.all()
+    return render_template('index.html', tasks=tasks)
+
+# Thêm công việc mới
+@app.route('/add_task', methods=['GET', 'POST'])
+def add_task():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        priority = request.form['priority']
+        due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d')
+        new_task = Task(title=title, description=description, priority=priority, due_date=due_date)
+        db.session.add(new_task)
+        db.session.commit()
+        return redirect(url_for('index'))
+    return render_template('add_task.html')
+
+# Chỉnh sửa công việc
+@app.route('/edit_task/<int:task_id>', methods=['GET', 'POST'])
+def edit_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    if request.method == 'POST':
+        task.title = request.form['title']
+        task.description = request.form['description']
+        task.priority = request.form['priority']
+        task.due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d')
+        db.session.commit()
+        return redirect(url_for('index'))
+    return render_template('edit_task.html', task=task)
+
+# Xóa công việc
+@app.route('/delete_task/<int:task_id>', methods=['GET', 'POST'])
+def delete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    db.session.delete(task)
+    db.session.commit()
+    return redirect(url_for('index'))
+
+# Đánh dấu công việc là đã hoàn thành
+@app.route('/complete_task/<int:task_id>', methods=['GET', 'POST'])
+def complete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    task.completed = True
+    db.session.commit()
+    return redirect(url_for('index'))
+
+# Chạy ứng dụng
+if __name__ == '__main__':
+    db.create_all()  # Tạo các bảng trong cơ sở dữ liệu
+    app.run(debug=True)
