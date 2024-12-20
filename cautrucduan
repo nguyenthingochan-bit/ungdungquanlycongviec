@@ -1,0 +1,7 @@
+task_manager/
+│
+├── app.py           # File chính chứa code Flask
+├── models.py        # File chứa định nghĩa các mô hình cơ sở dữ liệu (Công việc, Người dùng)
+├── templates/       # Thư mục chứa các template HTML (nếu có)
+├── static/          # Thư mục chứa các file CSS, JS
+└── database.db      # Cơ sở dữ liệu SQLit
